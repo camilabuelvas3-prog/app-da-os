@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Camila Buelvas Bula">
+<title>Identificación de daños · Bloques D, E, F · Universidad del Norte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!--
+  ============================================================================
+  Base de datos técnica de inspección
+  Tema: Identificación de daños en los bloques D, E, F de la Universidad del Norte
+  Autor: Camila Buelvas Bula
+  ============================================================================
+-->
+<style>
+  :root{
+    --bg:#0b0f14;
+    --bg-2:#10161d;
+    --panel:#151c25;
+    --panel-2:#1a232e;
+    --border:#243041;
+    --border-2:#2f3d52;
+    --text:#e6edf3;
+    --muted:#8b98a8;
+    --dim:#5d6b7c;
+    --accent:#4f9cf9;
+    --accent-2:#2f7de0;
+    --green:#3fb950;  --green-bg:rgba(63,185,80,.14);
+    --orange:#f0883e; --orange-bg:rgba(240,136,62,.15);
+    --red:#f85149;    --red-bg:rgba(248,81,73,.15);
+    --radius:12px;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+  button{cursor:pointer}
+  .mono{font-family:'IBM Plex Mono',monospace}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(11,15,20,.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .header-inner{
+    max-width:1400px;margin:0 auto;padding:14px 24px;
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+  .brand-icon{
+    width:38px;height:38px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--accent),#7b5cf5);
+    display:grid;place-items:center;
+  }
+  .brand-icon svg{width:20px;height:20px;color:#fff}
+  .brand h1{font-size:15px;font-weight:600;letter-spacing:.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand p{font-size:12px;color:var(--muted)}
+  .conn{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 12px;border:1px solid var(--border);border-radius:999px;
+    font-size:12px;color:var(--muted);background:var(--bg-2);
+  }
+  .conn .dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex-shrink:0}
+  .conn.online .dot{background:var(--green);box-shadow:0 0 0 0 rgba(63,185,80,.6);animation:pulse 2s infinite}
+  .conn.syncing .dot{background:var(--orange)}
+  .conn.local .dot{background:var(--orange)}
+  .conn.offline .dot,.conn.error .dot{background:var(--red)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,185,80,.55)}70%{box-shadow:0 0 0 7px rgba(63,185,80,0)}100%{box-shadow:0 0 0 0 rgba(63,185,80,0)}}
+
+  .tabs{max-width:1400px;margin:0 auto;padding:0 24px;display:flex;gap:4px}
+  .tab{
+    background:none;border:none;padding:10px 16px;color:var(--muted);
+    font-weight:500;border-bottom:2px solid transparent;display:flex;align-items:center;gap:8px;
+  }
+  .tab svg{width:16px;height:16px}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--text);border-bottom-color:var(--accent)}
+  .tab .count{font-size:11px;background:var(--panel-2);border:1px solid var(--border);padding:0 7px;border-radius:999px;color:var(--muted)}
+
+  main{max-width:1400px;margin:0 auto;padding:24px}
+  .view{display:none}
+  .view.active{display:block}
+
+  .banner{
+    display:none;margin-bottom:18px;padding:10px 14px;border-radius:10px;
+    background:var(--orange-bg);border:1px solid rgba(240,136,62,.35);color:#f7c39c;font-size:13px;
+  }
+  .banner.show{display:flex;gap:10px;align-items:center}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:9px 14px;border-radius:9px;border:1px solid var(--border-2);
+    background:var(--panel-2);font-weight:500;transition:.15s;white-space:nowrap;
+  }
+  .btn svg{width:16px;height:16px}
+  .btn:hover{border-color:var(--dim);background:#212c39}
+  .btn.primary{background:var(--accent-2);border-color:var(--accent-2);color:#fff}
+  .btn.primary:hover{background:var(--accent)}
+  .btn.danger{color:var(--red);border-color:rgba(248,81,73,.4);background:transparent}
+  .btn.danger:hover{background:var(--red-bg)}
+  .btn.active-mode{background:var(--orange);border-color:var(--orange);color:#1a0f05}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .icon-btn{
+    width:32px;height:32px;display:grid;place-items:center;border-radius:8px;
+    border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;
+  }
+  .icon-btn svg{width:15px;height:15px}
+  .icon-btn:hover{color:var(--text);border-color:var(--border-2);background:var(--panel-2)}
+  .icon-btn.del:hover{color:var(--red);border-color:rgba(248,81,73,.45);background:var(--red-bg)}
+
+  /* ---------- Stats ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .stat{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;display:flex;align-items:center;gap:12px;
+  }
+  .stat .bar{width:4px;align-self:stretch;border-radius:4px;background:var(--accent)}
+  .stat.leve .bar{background:var(--green)}
+  .stat.moderado .bar{background:var(--orange)}
+  .stat.severo .bar{background:var(--red)}
+  .stat b{font-size:22px;font-weight:600;display:block;line-height:1.1}
+  .stat span{font-size:12px;color:var(--muted)}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+  .search{
+    flex:1;min-width:220px;display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:0 12px;
+  }
+  .search svg{width:16px;height:16px;color:var(--dim);flex-shrink:0}
+  .search input{flex:1;background:none;border:none;outline:none;padding:9px 0}
+  .search:focus-within{border-color:var(--accent)}
+  select.filter,.field select,.field input,.field textarea{
+    background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:9px 12px;outline:none;
+  }
+  select.filter:focus,.field select:focus,.field input:focus,.field textarea:focus{border-color:var(--accent)}
+  select option{background:var(--panel)}
+
+  /* ---------- Cards grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .card{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,transform .15s;
+  }
+  .card:hover{border-color:var(--border-2);transform:translateY(-2px)}
+  .card.lv-leve{border-top:3px solid var(--green)}
+  .card.lv-moderado{border-top:3px solid var(--orange)}
+  .card.lv-severo{border-top:3px solid var(--red)}
+
+  .mosaic{display:grid;gap:2px;aspect-ratio:4/3;background:#06090c}
+  .mosaic img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;min-height:0}
+  .mosaic.n1{grid-template-columns:1fr}
+  .mosaic.n2{grid-template-columns:1fr 1fr}
+  .mosaic.n3{grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr}
+  .mosaic.n3 img:first-child{grid-row:span 2}
+  .mosaic.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+  .mosaic.empty{display:grid;place-items:center;color:var(--dim);font-size:12px}
+
+  .card-body{padding:14px 16px 12px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .code{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
+  .card h3{font-size:15px;font-weight:600;line-height:1.3}
+  .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .meta div{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:6px 9px}
+  .meta dt{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+  .meta dd{font-size:13px;font-weight:500}
+  .obs{font-size:12.5px;color:var(--muted);border-left:2px solid var(--border-2);padding-left:9px}
+  .card-actions{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+  .card-actions .pin-info{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-right:auto}
+  .card-actions .pin-info svg{width:13px;height:13px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;
+    font-size:12px;font-weight:600;border:1px solid transparent;white-space:nowrap;
+  }
+  .badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .badge.leve{color:var(--green);background:var(--green-bg);border-color:rgba(63,185,80,.35)}
+  .badge.moderado{color:var(--orange);background:var(--orange-bg);border-color:rgba(240,136,62,.35)}
+  .badge.severo{color:var(--red);background:var(--red-bg);border-color:rgba(248,81,73,.35)}
+
+  .empty-state{
+    grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);
+    border:1px dashed var(--border-2);border-radius:var(--radius);
+  }
+  .empty-state svg{width:40px;height:40px;color:var(--dim);margin-bottom:10px}
+  .empty-state h4{color:var(--text);font-size:15px;font-weight:600;margin-bottom:4px}
+
+  /* ---------- Map ---------- */
+  .map-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .legend{display:flex;gap:14px;margin-left:auto;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:50%;display:inline-block;border:2px solid #fff3}
+  .hint{
+    display:none;margin-bottom:12px;padding:9px 14px;border-radius:9px;font-size:13px;
+    background:var(--orange-bg);border:1px solid rgba(240,136,62,.4);color:#f7c39c;
+  }
+  .hint.show{display:block}
+  .map-stage{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:12px;overflow:auto;
+  }
+  .map-wrap{position:relative;display:block;width:100%;user-select:none}
+  .map-wrap img.map-img{width:100%;height:auto;display:block;border-radius:8px}
+  .map-wrap.adding{cursor:crosshair}
+  .map-wrap.adding img.map-img{outline:2px dashed var(--orange);outline-offset:-2px}
+  .pin{
+    position:absolute;transform:translate(-50%,-100%);
+    background:none;border:none;padding:0;width:30px;height:40px;
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));transition:transform .12s;z-index:2;
+  }
+  .pin:hover{transform:translate(-50%,-100%) scale(1.18);z-index:5}
+  .pin svg{width:30px;height:40px;display:block}
+  .pin .lbl{
+    position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;
+    background:#000d;color:#fff;font-size:11px;padding:2px 7px;border-radius:5px;white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace;opacity:0;pointer-events:none;transition:.12s;
+  }
+  .pin:hover .lbl{opacity:1}
+  .pin.temp{animation:bob 1s infinite;pointer-events:none}
+  @keyframes bob{50%{transform:translate(-50%,-112%)}}
+  .map-empty{text-align:center;padding:80px 20px;color:var(--muted)}
+  .map-empty svg{width:48px;height:48px;color:var(--dim);margin-bottom:12px}
+  .map-empty h4{color:var(--text);font-size:16px;margin-bottom:6px}
+  .map-empty .btn{margin-top:16px}
+
+  /* ---------- Modal ---------- */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(3,6,10,.72);backdrop-filter:blur(4px);
+    display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:100;overflow-y:auto;
+  }
+  .modal-bg.open{display:flex}
+  .modal{
+    background:var(--panel);border:1px solid var(--border-2);border-radius:14px;
+    width:100%;max-width:560px;box-shadow:var(--shadow);animation:pop .16s ease-out;
+  }
+  .modal.wide{max-width:820px}
+  @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .modal-head h2{font-size:16px;font-weight:600}
+  .modal-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border)}
+  .modal-foot .left{margin-right:auto}
+
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label,.field .lab{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .field .req{color:var(--red)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field input[type=date]{color-scheme:dark}
+  .field textarea{resize:vertical;min-height:70px}
+  .seg{display:flex;gap:6px}
+  .seg input{display:none}
+  .seg label{
+    flex:1;text-align:center;padding:9px 0;border:1px solid var(--border);border-radius:9px;
+    background:var(--bg-2);cursor:pointer;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;font-size:14px;transition:.12s;
+  }
+  .seg label:hover{border-color:var(--border-2);color:var(--text)}
+  .seg input:checked+label{border-color:var(--accent);background:rgba(79,156,249,.14);color:var(--text)}
+  .seg.nivel input#nv-leve:checked+label{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+  .seg.nivel input#nv-moderado:checked+label{border-color:var(--orange);background:var(--orange-bg);color:var(--orange)}
+  .seg.nivel input#nv-severo:checked+label{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+  .seg-note{font-size:11.5px;color:var(--dim)}
+
+  .drop{
+    border:1.5px dashed var(--border-2);border-radius:10px;padding:18px;text-align:center;
+    color:var(--muted);cursor:pointer;transition:.15s;background:var(--bg-2);
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);color:var(--text)}
+  .drop svg{width:26px;height:26px;margin-bottom:4px}
+  .drop small{display:block;color:var(--dim);font-size:11.5px}
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb button{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
+    border:none;background:#000c;color:#fff;display:grid;place-items:center;font-size:14px;line-height:1;
+  }
+  .thumb button:hover{background:var(--red)}
+  .thumb .kb{position:absolute;bottom:3px;left:4px;font-size:10px;background:#000b;padding:0 5px;border-radius:4px;font-family:'IBM Plex Mono',monospace}
+  .thumb.loading{display:grid;place-items:center;background:var(--bg-2)}
+  .spinner{width:20px;height:20px;border:2px solid var(--border-2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Detail */
+  .detail-photos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+  .detail-photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--border)}
+  .detail-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .detail-meta div{background:var(--bg-2);border:1px solid var(--border);border-radius:9px;padding:9px 12px}
+  .detail-meta dt{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim)}
+  .detail-meta dd{font-weight:500}
+
+  /* Select ficha list */
+  .pick-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;padding-right:4px}
+  .pick{
+    display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--border);border-radius:10px;
+    background:var(--bg-2);text-align:left;width:100%;transition:.12s;
+  }
+  .pick:hover{border-color:var(--accent);background:rgba(79,156,249,.08)}
+  .pick img,.pick .noimg{width:56px;height:56px;border-radius:7px;object-fit:cover;flex-shrink:0;background:var(--panel-2)}
+  .pick .info{flex:1;min-width:0}
+  .pick .info b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pick .info span{font-size:12px;color:var(--muted)}
+
+  /* Lightbox */
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:200;cursor:zoom-out;padding:30px}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:var(--shadow)}
+
+  /* Toasts */
+  .toasts{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:300}
+  .toast{
+    background:var(--panel-2);border:1px solid var(--border-2);border-left:3px solid var(--accent);
+    padding:10px 14px;border-radius:9px;box-shadow:var(--shadow);font-size:13px;max-width:360px;animation:pop .2s;
+  }
+  .toast.ok{border-left-color:var(--green)}
+  .toast.err{border-left-color:var(--red)}
+
+  footer{max-width:1400px;margin:0 auto;padding:10px 24px 30px;color:var(--dim);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+  @media (max-width:760px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .row2{grid-template-columns:1fr}
+    .detail-meta{grid-template-columns:1fr 1fr}
+    .header-inner,.tabs,main{padding-left:14px;padding-right:14px}
+    .brand h1{white-space:normal}
+    .legend{margin-left:0}
+  }
+</style>
+</head>
+<body>
+
+<!-- SVG icon sprite -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-cards" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 21V5l8-3 8 3v16"/><path d="M9 21v-4h6v4M8 8h2M14 8h2M8 12h2M14 12h2M2 21h20"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  </defs>
+</svg>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon"><svg><use href="#i-building"/></svg></div>
+      <div style="min-width:0">
+        <h1>Identificación de daños · Bloques D, E, F</h1>
+        <p>Base de datos técnica de inspección — Universidad del Norte</p>
+      </div>
+    </div>
+    <div class="conn" id="conn" title="Estado de la conexión">
+      <span class="dot"></span><span id="connText">Conectando…</span>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="fichas"><svg><use href="#i-cards"/></svg>Fichas Técnicas <span class="count" id="countFichas">0</span></button>
+    <button class="tab" data-tab="mapa"><svg><use href="#i-map"/></svg>Mapa Interactivo <span class="count" id="countPins">0</span></button>
+  </nav>
+</header>
+
+<main>
+  <div class="banner" id="localBanner">
+    <svg width="18" height="18" style="flex-shrink:0"><use href="#i-warn"/></svg>
+    <span><b>Firebase no está configurado.</b> La app funciona en modo local: los datos se guardan solo en este navegador. Añade tus credenciales en <code>firebaseConfig</code> para activar la sincronización en tiempo real.</span>
+  </div>
+
+  <!-- ============ PESTAÑA 1: FICHAS ============ -->
+  <section class="view active" id="view-fichas">
+    <div class="stats">
+      <div class="stat"><div class="bar"></div><div><b id="stTotal">0</b><span>Fichas registradas</span></div></div>
+      <div class="stat leve"><div class="bar"></div><div><b id="stLeve">0</b><span>Leve · riesgo bajo</span></div></div>
+      <div class="stat moderado"><div class="bar"></div><div><b id="stModerado">0</b><span>Moderado · riesgo medio</span></div></div>
+      <div class="stat severo"><div class="bar"></div><div><b id="stSevero">0</b><span>Severo · riesgo alto</span></div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input type="search" id="search" placeholder="Buscar por código, bloque, tipología, nivel, fecha u observaciones…">
+      </div>
+      <select class="filter" id="filterTipo">
+        <option value="">Todas las tipologías</option>
+      </select>
+      <select class="filter" id="filterBloque">
+        <option value="">Todos los bloques</option>
+        <option value="D">Bloque D</option>
+        <option value="E">Bloque E</option>
+        <option value="F">Bloque F</option>
+      </select>
+      <button class="btn primary" id="btnAdd"><svg><use href="#i-plus"/></svg>Añadir Ficha</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- ============ PESTAÑA 2: MAPA ============ -->
+  <section class="view" id="view-mapa">
+    <div class="map-toolbar">
+      <button class="btn" id="btnPinMode" disabled><svg><use href="#i-pin"/></svg><span>Añadir Pin</span></button>
+      <button class="btn" id="btnMapUpload"><svg><use href="#i-upload"/></svg><span id="btnMapUploadTxt">Cargar plano</span></button>
+      <input type="file" id="mapFile" accept="image/*" hidden>
+      <div class="legend">
+        <span><i style="background:var(--green)"></i>Leve · bajo</span>
+        <span><i style="background:var(--orange)"></i>Moderado · medio</span>
+        <span><i style="background:var(--red)"></i>Severo · alto</span>
+      </div>
+    </div>
+    <div class="hint" id="pinHint">Modo <b>Añadir Pin</b> activo: haz clic en el plano donde está el daño y luego selecciona la ficha que quieres vincular. Pulsa <b>Esc</b> o el botón para salir.</div>
+    <div class="map-stage" id="mapStage"></div>
+  </section>
+</main>
+
+<footer>
+  <span>Identificación de daños en los bloques D, E, F — Universidad del Norte</span>
+  <span>Autor: <b style="color:var(--muted)">Camila Buelvas Bula</b></span>
+</footer>
+
+<!-- ============ MODAL: FORMULARIO FICHA ============ -->
+<div class="modal-bg" id="mdForm">
+  <form class="modal" id="fichaForm" novalidate>
+    <div class="modal-head">
+      <h2 id="formTitle">Nueva ficha técnica</h2>
+      <button type="button" class="icon-btn" data-close><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field">
+          <label for="fFecha">Fecha <span class="req">*</span></label>
+          <input type="date" id="fFecha" required>
+          <span class="seg-note">Se muestra como dd/mm/aa</span>
+        </div>
+        <div class="field">
+          <span class="lab">Bloque <span class="req">*</span></span>
+          <div class="seg">
+            <input type="radio" name="bloque" id="bl-D" value="D"><label for="bl-D">D</label>
+            <input type="radio" name="bloque" id="bl-E" value="E"><label for="bl-E">E</label>
+            <input type="radio" name="bloque" id="bl-F" value="F"><label for="bl-F">F</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fTipo">Tipología de daño <span class="req">*</span></label>
+        <select id="fTipo"></select>
+        <input type="text" id="fTipoOtro" placeholder="Describe la tipología de daño…" style="display:none" maxlength="80">
+      </div>
+
+      <div class="field">
+        <span class="lab">Nivel de daño <span class="req">*</span></span>
+        <div class="seg nivel">
+          <input type="radio" name="nivel" id="nv-leve" value="Leve"><label for="nv-leve">Leve</label>
+          <input type="radio" name="nivel" id="nv-moderado" value="Moderado"><label for="nv-moderado">Moderado</label>
+          <input type="radio" name="nivel" id="nv-severo" value="Severo"><label for="nv-severo">Severo</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fObs">Observaciones <span style="text-transform:none;letter-spacing:0;color:var(--dim)">(opcional)</span></label>
+        <textarea id="fObs" maxlength="600" placeholder="Ubicación exacta, dimensiones, causa probable…"></textarea>
+      </div>
+
+      <div class="field">
+        <span class="lab">Fotografías (1 a 4) <span class="req">*</span></span>
+        <div class="drop" id="drop">
+          <svg><use href="#i-image"/></svg>
+          <div>Haz clic o arrastra las fotos aquí</div>
+          <small>Se comprimen automáticamente antes de guardar</small>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn" data-close>Cancelar</button>
+      <button type="submit" class="btn primary" id="btnSave">Guardar ficha</button>
+    </div>
+  </form>
+</div>
+
+<!-- ============ MODAL: DETALLE (pin) ============ -->
+<div class="modal-bg" id="mdDetail">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2 id="detailTitle">Ficha técnica</h2>
+      <button type="button" class="icon-btn" data-close><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn danger left" id="btnDelPin"><svg><use href="#i-trash"/></svg>Eliminar pin</button>
+      <button type="button" class="btn" id="btnDetailEdit"><svg><use href="#i-edit"/></svg>Editar ficha</button>
+      <button type="button" class="btn primary" data-close>Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: SELECCIONAR FICHA PARA PIN ============ -->
+<div class="modal-bg" id="mdPick">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Vincular ficha al pin</h2>
+      <button type="button" class="icon-btn" data-close><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="search"><svg><use href="#i-search"/></svg><input type="search" id="pickSearch" placeholder="Buscar ficha…"></div>
+      <div class="pick-list" id="pickList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: CONFIRMAR ============ -->
+<div class="modal-bg" id="mdConfirm">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head"><h2 id="confirmTitle">¿Confirmar?</h2></div>
+    <div class="modal-body"><p id="confirmMsg" style="color:var(--muted)"></p></div>
+    <div class="modal-foot">
+      <button type="button" class="btn" id="confirmNo">Cancelar</button>
+      <button type="button" class="btn danger" id="confirmYes"><svg><use href="#i-trash"/></svg>Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox"><img alt=""></div>
+<div class="toasts" id="toasts"></div>
+
+<script type="module">
+/* ==========================================================================
+   CONFIGURACIÓN DE FIREBASE
+   --------------------------------------------------------------------------
+   Copia estos valores desde: Consola de Firebase → ⚙ Configuración del
+   proyecto → General → "Tus apps" → App web → "Configuración del SDK".
+   Mientras apiKey y projectId estén vacíos, la app funciona en MODO LOCAL
+   (guarda solo en este navegador).
+   ========================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCbSLoJNuw5ToGyO-1ohY00f2hy0xsdhWg",   // clave de API web
+  authDomain: "bloques-def.firebaseapp.com",
+  projectId: "bloques-def",                           // ID del proyecto
+  storageBucket: "bloques-def.firebasestorage.app",   // no se usa (fotos van en Firestore)
+  messagingSenderId: "944758042359",
+  appId: "1:944758042359:web:f1c6e0d9e12d67eb29edf2",
+  measurementId: "G-KE0W14FX9R"
+};
+
+const FIREBASE_VERSION = "10.12.2";
+const USE_FIREBASE = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+
+/* Colecciones en Firestore */
+const COL_FICHAS = "fichas";
+const COL_PINS   = "pins";
+const COL_CONFIG = "config";   // documento "mapa" con la imagen del plano
+
+/* Límites (Firestore admite máx. 1 MiB por documento) */
+const MAX_PHOTOS        = 4;
+const PHOTO_MAX_DIM     = 1280;      // px lado mayor
+const PHOTO_MAX_CHARS   = 210000;    // ~205 KB por foto en base64 → 4 fotos < 1 MiB
+const MAP_MAX_DIM       = 2200;
+const MAP_MAX_CHARS     = 900000;
+
+const TIPOLOGIAS = [
+  "Agrietamiento",
+  "Delaminación",
+  "Corrosión del acero de refuerzo",
+  "Humedad y filtraciones",
+  "Deficiencias constructivas"
+];
+const OTRO = "__otro";
+const NIVELES = {
+  "Leve":     { cls:"leve",     riesgo:"Riesgo bajo",  color:"#3fb950" },
+  "Moderado": { cls:"moderado", riesgo:"Riesgo medio", color:"#f0883e" },
+  "Severo":   { cls:"severo",   riesgo:"Riesgo alto",  color:"#f85149" }
+};
+
+/* ==========================================================================
+   ESTADO
+   ========================================================================== */
+const state = {
+  fichas: [],
+  pins: [],
+  mapa: null,
+  busqueda: "",
+  filtroTipo: "",
+  filtroBloque: "",
+  editingId: null,
+  formPhotos: [],          // [{data, loading}]
+  addPinMode: false,
+  pendingPin: null,        // {x,y}
+  detailPinId: null,
+  detailFichaId: null
+};
+
+/* ==========================================================================
+   UTILIDADES
+   ========================================================================== */
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const kb = chars => Math.round(chars * 0.75 / 1024) + " KB";
+
+function fmtFecha(iso){            // "2026-11-16" → "16/11/26"
+  if(!iso) return "—";
+  const [y,m,d] = iso.split("-");
+  return `${d}/${m}/${y.slice(-2)}`;
+}
+function codeOf(f){ return "FT-" + String(f.numero ?? 0).padStart(3, "0"); }
+function nivelInfo(n){ return NIVELES[n] || { cls:"", riesgo:"—", color:"#8b98a8" }; }
+function badge(n){ const i = nivelInfo(n); return `<span class="badge ${i.cls}">${esc(n)} · ${i.riesgo}</span>`; }
+function tipoKey(f){ return TIPOLOGIAS.includes(f.tipologia) ? f.tipologia : OTRO; }
+function fichaById(id){ return state.fichas.find(f => f.id === id); }
+
+function toast(msg, type=""){
+  const t = document.createElement("div");
+  t.className = "toast " + type;
+  t.textContent = msg;
+  $("#toasts").appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+function openModal(id){ $("#"+id).classList.add("open"); document.body.style.overflow = "hidden"; }
+function closeModal(id){
+  $("#"+id).classList.remove("open");
+  if(!$$(".modal-bg.open").length) document.body.style.overflow = "";
+}
+
+function confirmDialog(title, msg){
+  return new Promise(res => {
+    $("#confirmTitle").textContent = title;
+    $("#confirmMsg").textContent = msg;
+    openModal("mdConfirm");
+    const done = v => { closeModal("mdConfirm"); $("#confirmYes").onclick = $("#confirmNo").onclick = null; res(v); };
+    $("#confirmYes").onclick = () => done(true);
+    $("#confirmNo").onclick  = () => done(false);
+  });
+}
+
+/* ---------- Compresión de imágenes ---------- */
+function loadImage(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Formato de imagen no soportado")); };
+    img.src = url;
+  });
+}
+async function compressImage(file, maxDim, maxChars){
+  const img = await loadImage(file);
+  let scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+  let quality = 0.78;
+  let out = "";
+  for(let i = 0; i < 12; i++){
+    const c = document.createElement("canvas");
+    c.width  = Math.max(1, Math.round(img.naturalWidth  * scale));
+    c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    out = c.toDataURL("image/jpeg", quality);
+    if(out.length <= maxChars) return out;
+    if(quality > 0.5) quality -= 0.08; else scale *= 0.82;
+  }
+  return out;
+}
+
+/* ==========================================================================
+   CAPA DE DATOS (Firestore o modo local)
+   ========================================================================== */
+async function createStore(){
+  if(USE_FIREBASE){
+    const appMod = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
+    const fs     = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`);
+    const app = appMod.initializeApp(firebaseConfig);
+    let db;
+    try {
+      // Caché persistente: la app sigue funcionando sin internet y sincroniza al reconectar
+      db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) });
+    } catch(e){
+      db = fs.getFirestore(app);
+    }
+    return {
+      mode: "firebase",
+      listen(col, cb, onMeta){
+        return fs.onSnapshot(fs.collection(db, col), { includeMetadataChanges:true },
+          snap => {
+            cb(snap.docs.map(d => ({ id:d.id, ...d.data() })));
+            onMeta && onMeta(snap.metadata);
+          },
+          err => { console.error(err); setConn("error", "Error: " + (err.code || err.message)); }
+        );
+      },
+      listenDoc(col, id, cb){
+        return fs.onSnapshot(fs.doc(db, col, id), s => cb(s.exists() ? s.data() : null),
+          err => console.error(err));
+      },
+      add:    (col, data)     => fs.addDoc(fs.collection(db, col), data),
+      update: (col, id, data) => fs.updateDoc(fs.doc(db, col, id), data),
+      remove: (col, id)       => fs.deleteDoc(fs.doc(db, col, id)),
+      set:    (col, id, data) => fs.setDoc(fs.doc(db, col, id), data)
+    };
+  }
+
+  /* ----- Modo local (localStorage) ----- */
+  const PREFIX = "inspeccion_uninorte_DEF_";
+  const listeners = {};
+  const read  = key => { try { return JSON.parse(localStorage.getItem(PREFIX + key)); } catch { return null; } };
+  const write = (key, val) => {
+    try { localStorage.setItem(PREFIX + key, JSON.stringify(val)); }
+    catch(e){ throw new Error("Almacenamiento local lleno. Configura Firebase para guardar más fichas."); }
+    (listeners[key] || []).forEach(fn => fn(val));
+  };
+  const on = (key, fn) => { (listeners[key] ||= []).push(fn); };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return {
+    mode: "local",
+    listen(col, cb){ on(col, v => cb(v || [])); cb(read(col) || []); },
+    listenDoc(col, id, cb){ const k = col + "_" + id; on(k, cb); cb(read(k)); },
+    async add(col, data){ const arr = read(col) || []; const id = uid(); arr.push({ id, ...data }); write(col, arr); return { id }; },
+    async update(col, id, data){ write(col, (read(col) || []).map(x => x.id === id ? { ...x, ...data } : x)); },
+    async remove(col, id){ write(col, (read(col) || []).filter(x => x.id !== id)); },
+    async set(col, id, data){ write(col + "_" + id, data); }
+  };
+}
+
+/* ---------- Indicador de conexión ---------- */
+let lastMeta = null;
+function setConn(cls, text){
+  const el = $("#conn");
+  el.className = "conn " + cls;
+  $("#connText").textContent = text;
+}
+function refreshConn(){
+  if(!store) return;
+  if(store.mode === "local"){ setConn("local", "Modo local"); return; }
+  if(!navigator.onLine){ setConn("offline", "Sin conexión"); return; }
+  if(!lastMeta){ setConn("syncing", "Conectando…"); return; }
+  if(lastMeta.fromCache){ setConn("offline", "Sin conexión con Firebase"); return; }
+  if(lastMeta.hasPendingWrites){ setConn("syncing", "Sincronizando…"); return; }
+  setConn("online", "En línea · tiempo real");
+}
+window.addEventListener("online",  refreshConn);
+window.addEventListener("offline", refreshConn);
+
+/* ==========================================================================
+   RENDER — FICHAS
+   ========================================================================== */
+function filteredFichas(){
+  const q = norm(state.busqueda.trim());
+  return state.fichas
+    .filter(f => !state.filtroTipo   || tipoKey(f) === state.filtroTipo)
+    .filter(f => !state.filtroBloque || f.bloque === state.filtroBloque)
+    .filter(f => !q || norm([codeOf(f), "bloque " + f.bloque, f.tipologia, f.nivel, nivelInfo(f.nivel).riesgo, fmtFecha(f.fecha), f.observaciones].join(" ")).includes(q));
+}
+
+function mosaicHTML(fotos){
+  if(!fotos || !fotos.length) return `<div class="mosaic empty">Sin fotografías</div>`;
+  const n = Math.min(fotos.length, 4);
+  return `<div class="mosaic n${n}">${fotos.slice(0,4).map(src => `<img src="${src}" alt="Foto del daño" loading="lazy" data-zoom>`).join("")}</div>`;
+}
+
+function renderFichas(){
+  const all = state.fichas;
+  $("#countFichas").textContent = all.length;
+  $("#stTotal").textContent    = all.length;
+  $("#stLeve").textContent     = all.filter(f => f.nivel === "Leve").length;
+  $("#stModerado").textContent = all.filter(f => f.nivel === "Moderado").length;
+  $("#stSevero").textContent   = all.filter(f => f.nivel === "Severo").length;
+
+  const list = filteredFichas();
+  const grid = $("#grid");
+  if(!all.length){
+    grid.innerHTML = `<div class="empty-state"><svg><use href="#i-cards"/></svg><h4>Aún no hay fichas técnicas</h4><p>Pulsa “Añadir Ficha” para registrar el primer daño identificado.</p></div>`;
+    return;
+  }
+  if(!list.length){
+    grid.innerHTML = `<div class="empty-state"><svg><use href="#i-search"/></svg><h4>Sin resultados</h4><p>Ninguna ficha coincide con la búsqueda o los filtros.</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(f => {
+    const nPins = state.pins.filter(p => p.fichaId === f.id).length;
+    return `
+    <article class="card lv-${nivelInfo(f.nivel).cls}">
+      ${mosaicHTML(f.fotos)}
+      <div class="card-body">
+        <div class="card-top"><span class="code">${codeOf(f)}</span>${badge(f.nivel)}</div>
+        <h3>${esc(f.tipologia)}</h3>
+        <dl class="meta">
+          <div><dt>Fecha</dt><dd class="mono">${fmtFecha(f.fecha)}</dd></div>
+          <div><dt>Bloque</dt><dd>${esc(f.bloque)}</dd></div>
+          <div><dt>Nivel</dt><dd>${esc(f.nivel)}</dd></div>
+        </dl>
+        ${f.observaciones ? `<p class="obs">${esc(f.observaciones)}</p>` : ""}
+        <div class="card-actions">
+          <span class="pin-info"><svg><use href="#i-pin"/></svg>${nPins ? `${nPins} pin${nPins>1?"s":""} en el mapa` : "Sin ubicar en el mapa"}</span>
+          <button class="icon-btn" title="Editar" data-edit="${f.id}"><svg><use href="#i-edit"/></svg></button>
+          <button class="icon-btn del" title="Eliminar" data-del="${f.id}"><svg><use href="#i-trash"/></svg></button>
+        </div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function fillTipoSelects(){
+  const opts = TIPOLOGIAS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+  $("#filterTipo").innerHTML = `<option value="">Todas las tipologías</option>${opts}<option value="${OTRO}">Otras (texto libre)</option>`;
+  $("#fTipo").innerHTML = `<option value="" disabled selected>Selecciona una tipología…</option>${opts}<option value="${OTRO}">Otra (escribir)…</option>`;
+}
+
+/* ==========================================================================
+   FORMULARIO (crear / editar)
+   ========================================================================== */
+function openForm(id=null){
+  state.editingId = id;
+  const f = id ? fichaById(id) : null;
+  $("#formTitle").textContent = f ? `Editar ficha ${codeOf(f)}` : "Nueva ficha técnica";
+  $("#btnSave").textContent   = f ? "Guardar cambios" : "Guardar ficha";
+  $("#fichaForm").reset();
+  $("#fFecha").value = f?.fecha || new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(f?.bloque) $(`#bl-${f.bloque}`).checked = true;
+  if(f){
+    if(TIPOLOGIAS.includes(f.tipologia)){ $("#fTipo").value = f.tipologia; $("#fTipoOtro").style.display = "none"; }
+    else { $("#fTipo").value = OTRO; $("#fTipoOtro").style.display = ""; $("#fTipoOtro").value = f.tipologia; }
+  } else {
+    $("#fTipo").selectedIndex = 0; $("#fTipoOtro").style.display = "none"; $("#fTipoOtro").value = "";
+  }
+  if(f?.nivel) $(`#nv-${nivelInfo(f.nivel).cls}`).checked = true;
+  $("#fObs").value = f?.observaciones || "";
+  state.formPhotos = (f?.fotos || []).map(data => ({ data }));
+  renderThumbs();
+  openModal("mdForm");
+}
+
+function renderThumbs(){
+  $("#thumbs").innerHTML = state.formPhotos.map((p, i) => p.loading
+    ? `<div class="thumb loading"><div class="spinner"></div></div>`
+    : `<div class="thumb"><img src="${p.data}" alt=""><span class="kb">${kb(p.data.length)}</span><button type="button" data-rm="${i}" title="Quitar">×</button></div>`
+  ).join("");
+  const full = state.formPhotos.length >= MAX_PHOTOS;
+  $("#drop").style.display = full ? "none" : "";
+}
+
+async function addPhotos(files){
+  const imgs = [...files].filter(f => f.type.startsWith("image/"));
+  const free = MAX_PHOTOS - state.formPhotos.length;
+  if(!imgs.length) return;
+  if(imgs.length > free) toast(`Máximo ${MAX_PHOTOS} fotos por ficha. Se añadirán solo ${free}.`, "err");
+  const batch = imgs.slice(0, Math.max(0, free));
+  const slots = batch.map(() => { const s = { loading:true }; state.formPhotos.push(s); return s; });
+  renderThumbs();
+  await Promise.all(batch.map(async (file, i) => {
+    try {
+      slots[i].data = await compressImage(file, PHOTO_MAX_DIM, PHOTO_MAX_CHARS);
+      slots[i].loading = false;
+    } catch(e){
+      state.formPhotos.splice(state.formPhotos.indexOf(slots[i]), 1);
+      toast(`No se pudo procesar “${file.name}”: ${e.message}`, "err");
+    }
+  }));
+  renderThumbs();
+}
+
+async function saveFicha(ev){
+  ev.preventDefault();
+  const fecha  = $("#fFecha").value;
+  const bloque = $('input[name="bloque"]:checked')?.value;
+  const tipoSel = $("#fTipo").value;
+  const tipologia = tipoSel === OTRO ? $("#fTipoOtro").value.trim() : tipoSel;
+  const nivel  = $('input[name="nivel"]:checked')?.value;
+  const observaciones = $("#fObs").value.trim();
+
+  if(state.formPhotos.some(p => p.loading)) return toast("Espera a que terminen de comprimirse las fotos.", "err");
+  const fotos = state.formPhotos.map(p => p.data);
+
+  if(!fecha)     return toast("Indica la fecha de inspección.", "err");
+  if(!bloque)    return toast("Selecciona el bloque (D, E o F).", "err");
+  if(!tipologia) return toast("Indica la tipología de daño.", "err");
+  if(!nivel)     return toast("Selecciona el nivel de daño.", "err");
+  if(fotos.length < 1) return toast("Añade al menos una fotografía.", "err");
+
+  const size = fotos.reduce((a, s) => a + s.length, 0);
+  if(size > 980000) return toast("Las fotos superan el límite de 1 MB por ficha. Quita alguna.", "err");
+
+  const data = { fecha, bloque, tipologia, nivel, observaciones, fotos, actualizado: Date.now() };
+  const btn = $("#btnSave"); btn.disabled = true;
+  try {
+    if(state.editingId){
+      await store.update(COL_FICHAS, state.editingId, data);
+      toast("Ficha actualizada.", "ok");
+    } else {
+      const numero = state.fichas.reduce((m, f) => Math.max(m, f.numero || 0), 0) + 1;
+      await store.add(COL_FICHAS, { ...data, numero, creado: Date.now(), autor: "Camila Buelvas Bula" });
+      toast(`Ficha FT-${String(numero).padStart(3,"0")} guardada.`, "ok");
+    }
+    closeModal("mdForm");
+  } catch(e){
+    console.error(e);
+    toast("Error al guardar: " + e.message, "err");
+  } finally { btn.disabled = false; }
+}
+
+async function deleteFicha(id){
+  const f = fichaById(id); if(!f) return;
+  const linked = state.pins.filter(p => p.fichaId === id);
+  const ok = await confirmDialog(`Eliminar ${codeOf(f)}`,
+    `Se eliminará la ficha “${f.tipologia}” (Bloque ${f.bloque})` + (linked.length ? ` y ${linked.length} pin(s) vinculados en el mapa.` : ".") + " Esta acción no se puede deshacer.");
+  if(!ok) return;
+  try {
+    await Promise.all(linked.map(p => store.remove(COL_PINS, p.id)));
+    await store.remove(COL_FICHAS, id);
+    toast("Ficha eliminada.", "ok");
+  } catch(e){ toast("Error al eliminar: " + e.message, "err"); }
+}
+
+/* ==========================================================================
+   RENDER — MAPA
+   ========================================================================== */
+function pinSVG(color){
+  return `<svg viewBox="0 0 30 40"><path d="M15 39C15 39 28 24.5 28 14A13 13 0 0 0 2 14C2 24.5 15 39 15 39Z" fill="${color}" stroke="#fff" stroke-width="2"/><circle cx="15" cy="14" r="5" fill="#fff"/></svg>`;
+}
+
+function renderMap(){
+  $("#countPins").textContent = state.pins.length;
+  $("#btnMapUploadTxt").textContent = state.mapa ? "Cambiar plano" : "Cargar plano";
+  $("#btnPinMode").disabled = !state.mapa;
+  const stage = $("#mapStage");
+  if(!state.mapa){
+    if(state.addPinMode) togglePinMode(false);
+    stage.innerHTML = `<div class="map-empty"><svg><use href="#i-map"/></svg><h4>No hay plano cargado</h4><p>Sube la imagen del plano de los bloques D, E y F para empezar a ubicar los daños.</p><button class="btn primary" data-upload-map><svg><use href="#i-upload"/></svg>Cargar plano</button></div>`;
+    return;
+  }
+  let wrap = $(".map-wrap", stage);
+  if(!wrap || wrap.dataset.src !== String(state.mapa.actualizado)){
+    stage.innerHTML = `<div class="map-wrap" data-src="${state.mapa.actualizado}"><img class="map-img" src="${state.mapa.imagen}" alt="Plano bloques D, E, F" draggable="false"><div class="pins"></div></div>`;
+    wrap = $(".map-wrap", stage);
+  }
+  wrap.classList.toggle("adding", state.addPinMode);
+  const layer = $(".pins", wrap);
+  layer.innerHTML = state.pins.map(p => {
+    const f = fichaById(p.fichaId);
+    const color = f ? nivelInfo(f.nivel).color : "#8b98a8";
+    const lbl = f ? `${codeOf(f)} · ${f.tipologia}` : "Ficha no encontrada";
+    return `<button class="pin" style="left:${p.x}%;top:${p.y}%" data-pin="${p.id}">${pinSVG(color)}<span class="lbl">${esc(lbl)}</span></button>`;
+  }).join("") + (state.pendingPin ? `<div class="pin temp" style="left:${state.pendingPin.x}%;top:${state.pendingPin.y}%">${pinSVG("#4f9cf9")}</div>` : "");
+}
+
+function togglePinMode(force){
+  state.addPinMode = typeof force === "boolean" ? force : !state.addPinMode;
+  if(state.addPinMode && !state.fichas.length){
+    state.addPinMode = false;
+    toast("Primero crea al menos una ficha técnica para vincularla.", "err");
+  }
+  const b = $("#btnPinMode");
+  b.classList.toggle("active-mode", state.addPinMode);
+  $("span", b).textContent = state.addPinMode ? "Salir de Añadir Pin" : "Añadir Pin";
+  $("#pinHint").classList.toggle("show", state.addPinMode);
+  if(!state.addPinMode) state.pendingPin = null;
+  renderMap();
+}
+
+function onMapClick(e){
+  const pinEl = e.target.closest("[data-pin]");
+  if(pinEl){ e.stopPropagation(); openPinDetail(pinEl.dataset.pin); return; }
+  if(!state.addPinMode) return;
+  const img = e.target.closest(".map-wrap")?.querySelector(".map-img");
+  if(!img) return;
+  const r = img.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * 100;
+  const y = ((e.clientY - r.top) / r.height) * 100;
+  if(x < 0 || x > 100 || y < 0 || y > 100) return;
+  state.pendingPin = { x: +x.toFixed(3), y: +y.toFixed(3) };
+  renderMap();
+  $("#pickSearch").value = "";
+  renderPickList();
+  openModal("mdPick");
+  setTimeout(() => $("#pickSearch").focus(), 50);
+}
+
+function renderPickList(){
+  const q = norm($("#pickSearch").value);
+  const list = state.fichas.filter(f => !q || norm([codeOf(f), f.bloque, f.tipologia, f.nivel, fmtFecha(f.fecha)].join(" ")).includes(q));
+  $("#pickList").innerHTML = list.length ? list.map(f => `
+    <button type="button" class="pick" data-pick="${f.id}">
+      ${f.fotos?.[0] ? `<img src="${f.fotos[0]}" alt="">` : `<div class="noimg"></div>`}
+      <div class="info"><b>${codeOf(f)} · ${esc(f.tipologia)}</b><span>Bloque ${esc(f.bloque)} · ${fmtFecha(f.fecha)}</span></div>
+      ${badge(f.nivel)}
+    </button>`).join("") : `<p style="color:var(--muted);text-align:center;padding:20px">Ninguna ficha coincide.</p>`;
+}
+
+async function createPin(fichaId){
+  if(!state.pendingPin) return;
+  const { x, y } = state.pendingPin;
+  closeModal("mdPick");
+  try {
+    await store.add(COL_PINS, { x, y, fichaId, creado: Date.now() });
+    const f = fichaById(fichaId);
+    toast(`Pin vinculado a ${f ? codeOf(f) : "la ficha"}.`, "ok");
+  } catch(e){ toast("Error al guardar el pin: " + e.message, "err"); }
+  state.pendingPin = null;
+  renderMap();
+}
+
+function detailHTML(f){
+  return `
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="code" style="font-size:13px">${codeOf(f)}</span>${badge(f.nivel)}
+    </div>
+    <h3 style="font-size:20px;font-weight:600;margin-top:-6px">${esc(f.tipologia)}</h3>
+    <dl class="detail-meta">
+      <div><dt>Fecha</dt><dd class="mono">${fmtFecha(f.fecha)}</dd></div>
+      <div><dt>Bloque</dt><dd>${esc(f.bloque)}</dd></div>
+      <div><dt>Nivel de daño</dt><dd>${esc(f.nivel)}</dd></div>
+      <div><dt>Riesgo</dt><dd>${nivelInfo(f.nivel).riesgo}</dd></div>
+    </dl>
+    ${f.observaciones ? `<p class="obs" style="font-size:13.5px">${esc(f.observaciones)}</p>` : ""}
+    <div class="detail-photos">${(f.fotos || []).map(src => `<img src="${src}" alt="Foto del daño" data-zoom>`).join("") || `<p style="color:var(--muted)">Sin fotografías.</p>`}</div>`;
+}
+
+function openPinDetail(pinId){
+  const p = state.pins.find(x => x.id === pinId); if(!p) return;
+  const f = fichaById(p.fichaId);
+  state.detailPinId = pinId;
+  state.detailFichaId = f?.id || null;
+  $("#detailTitle").textContent = f ? `Ficha técnica ${codeOf(f)}` : "Pin sin ficha";
+  $("#detailBody").innerHTML = f ? detailHTML(f) : `<p style="color:var(--muted)">La ficha vinculada a este pin ya no existe. Puedes eliminar el pin.</p>`;
+  $("#btnDetailEdit").style.display = f ? "" : "none";
+  openModal("mdDetail");
+}
+
+async function deletePin(){
+  const id = state.detailPinId; if(!id) return;
+  const ok = await confirmDialog("Eliminar pin", "El pin se quitará del mapa. La ficha técnica no se elimina.");
+  if(!ok) return;
+  try {
+    await store.remove(COL_PINS, id);
+    closeModal("mdDetail");
+    toast("Pin eliminado.", "ok");
+  } catch(e){ toast("Error al eliminar el pin: " + e.message, "err"); }
+}
+
+async function uploadMap(file){
+  if(!file) return;
+  if(state.mapa && state.pins.length){
+    const ok = await confirmDialog("Cambiar plano", `Hay ${state.pins.length} pin(s) ubicados sobre el plano actual. Se conservarán en la misma posición relativa. ¿Continuar?`);
+    if(!ok) return;
+  }
+  toast("Comprimiendo plano…");
+  try {
+    const imagen = await compressImage(file, MAP_MAX_DIM, MAP_MAX_CHARS);
+    await store.set(COL_CONFIG, "mapa", { imagen, actualizado: Date.now() });
+    toast(`Plano guardado (${kb(imagen.length)}).`, "ok");
+  } catch(e){ toast("Error al cargar el plano: " + e.message, "err"); }
+}
+
+/* ==========================================================================
+   EVENTOS
+   ========================================================================== */
+function bindEvents(){
+  // Pestañas
+  $$(".tab").forEach(t => t.addEventListener("click", () => {
+    $$(".tab").forEach(x => x.classList.toggle("active", x === t));
+    $$(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t.dataset.tab));
+    if(t.dataset.tab !== "mapa" && state.addPinMode) togglePinMode(false);
+  }));
+
+  // Cerrar modales
+  $$("[data-close]").forEach(b => b.addEventListener("click", () => {
+    const id = b.closest(".modal-bg").id;
+    closeModal(id);
+    if(id === "mdPick"){ state.pendingPin = null; renderMap(); }
+  }));
+  $$(".modal-bg").forEach(bg => bg.addEventListener("mousedown", e => {
+    if(e.target === bg && bg.id !== "mdConfirm" && bg.id !== "mdForm"){
+      closeModal(bg.id);
+      if(bg.id === "mdPick"){ state.pendingPin = null; renderMap(); }
+    }
+  }));
+  document.addEventListener("keydown", e => {
+    if(e.key !== "Escape") return;
+    if($("#lightbox").classList.contains("open")){ $("#lightbox").classList.remove("open"); return; }
+    const open = $$(".modal-bg.open").pop();
+    if(open){
+      if(open.id === "mdConfirm") $("#confirmNo").click();
+      else { closeModal(open.id); if(open.id === "mdPick"){ state.pendingPin = null; renderMap(); } }
+      return;
+    }
+    if(state.addPinMode) togglePinMode(false);
+  });
+
+  // Fichas
+  $("#btnAdd").addEventListener("click", () => openForm());
+  $("#search").addEventListener("input", e => { state.busqueda = e.target.value; renderFichas(); });
+  $("#filterTipo").addEventListener("change", e => { state.filtroTipo = e.target.value; renderFichas(); });
+  $("#filterBloque").addEventListener("change", e => { state.filtroBloque = e.target.value; renderFichas(); });
+  $("#grid").addEventListener("click", e => {
+    const ed = e.target.closest("[data-edit]"); if(ed) return openForm(ed.dataset.edit);
+    const dl = e.target.closest("[data-del]");  if(dl) return deleteFicha(dl.dataset.del);
+  });
+
+  // Formulario
+  $("#fichaForm").addEventListener("submit", saveFicha);
+  $("#fTipo").addEventListener("change", e => {
+    const otro = e.target.value === OTRO;
+    $("#fTipoOtro").style.display = otro ? "" : "none";
+    if(otro) $("#fTipoOtro").focus();
+  });
+  const drop = $("#drop"), input = $("#photoInput");
+  drop.addEventListener("click", () => input.click());
+  input.addEventListener("change", () => { addPhotos(input.files); input.value = ""; });
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => addPhotos(e.dataTransfer.files));
+  $("#thumbs").addEventListener("click", e => {
+    const b = e.target.closest("[data-rm]"); if(!b) return;
+    state.formPhotos.splice(+b.dataset.rm, 1); renderThumbs();
+  });
+
+  // Mapa
+  $("#btnPinMode").addEventListener("click", () => togglePinMode());
+  $("#btnMapUpload").addEventListener("click", () => $("#mapFile").click());
+  $("#mapFile").addEventListener("change", e => { uploadMap(e.target.files[0]); e.target.value = ""; });
+  $("#mapStage").addEventListener("click", e => {
+    if(e.target.closest("[data-upload-map]")) return $("#mapFile").click();
+    onMapClick(e);
+  });
+  $("#pickSearch").addEventListener("input", renderPickList);
+  $("#pickList").addEventListener("click", e => { const b = e.target.closest("[data-pick]"); if(b) createPin(b.dataset.pick); });
+  $("#btnDelPin").addEventListener("click", deletePin);
+  $("#btnDetailEdit").addEventListener("click", () => { const id = state.detailFichaId; closeModal("mdDetail"); if(id) openForm(id); });
+
+  // Lightbox para cualquier foto
+  document.addEventListener("click", e => {
+    const img = e.target.closest("img[data-zoom]"); if(!img) return;
+    $("#lightbox img").src = img.src;
+    $("#lightbox").classList.add("open");
+  });
+  $("#lightbox").addEventListener("click", () => $("#lightbox").classList.remove("open"));
+}
+
+/* ==========================================================================
+   INICIO
+   ========================================================================== */
+let store = null;
+
+async function init(){
+  fillTipoSelects();
+  bindEvents();
+  renderFichas();
+  renderMap();
+  try {
+    store = await createStore();
+  } catch(e){
+    console.error(e);
+    setConn("error", "No se pudo cargar Firebase");
+    toast("No se pudo conectar con Firebase: " + e.message, "err");
+    return;
+  }
+  if(store.mode === "local") $("#localBanner").classList.add("show");
+  refreshConn();
+
+  store.listen(COL_FICHAS, docs => {
+    state.fichas = docs.sort((a, b) => (a.numero || 0) - (b.numero || 0));
+    renderFichas(); renderMap();
+    if($("#mdPick").classList.contains("open")) renderPickList();
+  }, meta => { lastMeta = meta; refreshConn(); });
+
+  store.listen(COL_PINS, docs => {
+    state.pins = docs;
+    renderMap(); renderFichas();
+    if(state.detailPinId && !docs.find(p => p.id === state.detailPinId) && $("#mdDetail").classList.contains("open")) closeModal("mdDetail");
+  }, meta => { lastMeta = meta; refreshConn(); });
+
+  store.listenDoc(COL_CONFIG, "mapa", data => { state.mapa = data; renderMap(); });
+}
+
+init();
+</script>
+</body>
+</html>
